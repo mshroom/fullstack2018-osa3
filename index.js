@@ -52,9 +52,9 @@ function getRandomInt(max) {
 app.post('/api/persons', (req, res) => {
     const id = getRandomInt(10000)
     const body = req.body
-    if (body.name === undefined) {
+    if ((body.name === undefined) || (body.name === '')) {
         return res.status(400).json({error: 'name missing'})
-    } else if (body.number === undefined) {
+    } else if ((body.number === undefined) || (body.number === '')) {
         return res.status(400).json({error: 'number missing'})
     }
     const p = persons.find(p => p.name === body.name)
