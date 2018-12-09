@@ -1,5 +1,7 @@
 const express = require('express')
 const app = express()
+const bodyParser = require('body-parser')
+app.use(bodyParser.json())
 
 let persons = [
     {
@@ -21,11 +23,6 @@ let persons = [
     "name": "Lea Kutvonen",
     "number": "040-123456",
     "id": 4
-    },
-    {
-    "name" : "Testi",
-    "number": "12345",
-    "id": 5    
     }
 ]
 
@@ -35,6 +32,31 @@ app.get('/', (req, res) => {
   
 app.get('/api/persons', (req, res) => {
     res.json(persons)
+})
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * Math.floor(max))
+}
+
+app.post('/api/persons', (req, res) => {
+    const id = getRandomInt(10000)
+    const body = req.body
+    if (body.name === undefined) {
+        return res.status(400).json({error: 'name missing'})
+    } else if (body.number === undefined) {
+        return res.status(400).json({error: 'number missing'})
+    }
+    const p = persons.find(p => p.name === body.name)
+    if (p) {
+        return res.status(400).json({error: 'name must be unique'})
+    }
+    const person = {
+        name: body.name,
+        number: body.number,
+        id: id
+    }
+    persons = persons.concat(person)
+    res.json(person)
 })
 
 app.get('/info', (req, res) => {
@@ -52,7 +74,7 @@ app.get('/api/persons/:id', (req, res) => {
     }    
 })
 
-app.delete('api/persons/:id', (req, res) => {
+app.delete('/api/persons/:id', (req, res) => {
     const id = Number(req.params.id)
     persons = persons.filter(person => person.id !== id)
     res.status(204).end()
