@@ -3,6 +3,15 @@ const app = express()
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 const cors = require('cors')
+const Person = require('./models/person')
+
+const formatPerson = (person) => {
+    return {
+        name: person.name,
+        number: person.number,
+        id: person._id
+    }
+}
 
 app.use(morgan('tiny'))
 app.use(bodyParser.json())
@@ -42,7 +51,15 @@ app.get('/', (req, res) => {
 })
   
 app.get('/api/persons', (req, res) => {
-    res.json(persons)
+    Person
+        .find({})
+        .then(persons => {
+            res.json(persons.map(formatPerson))
+        })
+        .catch(error => {
+            console.log(error)
+            res.status(404).end()
+        })
 })
 
 function getRandomInt(max) {
@@ -57,17 +74,19 @@ app.post('/api/persons', (req, res) => {
     } else if ((body.number === undefined) || (body.number === '')) {
         return res.status(400).json({error: 'number missing'})
     }
-    const p = persons.find(p => p.name === body.name)
-    if (p) {
-        return res.status(400).json({error: 'name must be unique'})
-    }
-    const person = {
+    const person = new Person ({
         name: body.name,
-        number: body.number,
-        id: id
-    }
-    persons = persons.concat(person)
-    res.json(person)
+        number: body.number
+    })
+
+    person
+        .save()
+        .then(savedPerson => {
+            res.json(formatPerson(savedPerson))
+        })
+        .catch(error => {
+            console.log(error)
+        })
 })
 
 app.get('/info', (req, res) => {
@@ -86,9 +105,14 @@ app.get('/api/persons/:id', (req, res) => {
 })
 
 app.delete('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    persons = persons.filter(person => person.id !== id)
-    res.status(204).end()
+    Person
+        .findByIdAndRemove(req.params.id)
+        .then(result => {
+            res.status(204).end()
+        })
+        .catch(error => {
+            res.status(400).send({ error: 'malformatted id' })
+        })
 })
 
 const PORT = process.env.PORT || 3001
